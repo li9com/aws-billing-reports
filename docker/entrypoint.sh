@@ -32,4 +32,4 @@ mysqlimport $MYSQL_CONN --fields-terminated-by ',' --fields-enclosed-by '"' --ig
 envsubst < queries.sql | mysql -t $MYSQL_CONN test > result.txt
 
 # AWS SES works in us-east-1 and us-west-2 only
-aws --region us-east-1 ses send-email --from "$EMAIL_FROM" --to "$EMAIL_TO" --subject "$EMAIL_SUBJECT" --text file://result.txt
+aws --region us-east-1 ses send-email --from "$EMAIL_FROM" --destination "ToAddresses=$EMAIL_TO" --subject "$EMAIL_SUBJECT" --text file://result.txt

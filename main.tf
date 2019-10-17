@@ -6,7 +6,6 @@ provider "aws" {
 module "billingreport" {
   source               = "./tfmodules/billingreport"
   account_id           = "${var.account_id}"
-  ecs_task_role        = "${var.ecs_task_role}"
   ecs_events_role      = "${var.ecs_events_role}"
   ecs_execution_role   = "${var.ecs_execution_role}"
   ecs_docker_image     = "${var.ecs_docker_image}"

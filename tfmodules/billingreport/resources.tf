@@ -1,14 +1,3 @@
-variable "account_id" {}
-variable "ecs_task_role" {}
-variable "ecs_execution_role" {}
-variable "ecs_docker_image" {}
-variable "email" { type = "map" }
-variable "billing_bucket" {}
-variable "report_interval_days" {}
-variable "reporting_schedule" {}
-variable "ecs_events_role" {}
-variable "subnets" { type = "list" }
-
 data "aws_region" "current" {}
 
 resource "aws_ecs_cluster" "angapov-test" {
@@ -24,7 +13,7 @@ resource "aws_ecs_cluster" "angapov-test" {
 
 resource "aws_ecs_task_definition" "billing-reporter" {
   family                   = "billing-reporter"
-  task_role_arn            = "arn:aws:iam::${var.account_id}:role/${var.ecs_task_role}"
+  task_role_arn            = "${aws_iam_role.billing-reports.arn}"
   execution_role_arn       = "arn:aws:iam::${var.account_id}:role/${var.ecs_execution_role}"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
@@ -76,7 +65,7 @@ resource "aws_cloudwatch_event_target" "billing-report" {
   target_id = "billing-report-ecs-cronjob"
   arn       = "${aws_ecs_cluster.angapov-test.arn}"
   rule      = "${aws_cloudwatch_event_rule.billing-reporter.name}"
-  role_arn  = "${var.ecs_events_role}"
+  role_arn  = "arn:aws:iam::${var.account_id}:role/${var.ecs_events_role}"
 
   ecs_target {
     launch_type         = "FARGATE"
@@ -92,4 +81,60 @@ resource "aws_cloudwatch_event_rule" "billing-reporter" {
   name                = "billing-report-ecs-cronjob"
   description         = "Send billing reports by email every week"
   schedule_expression = "${var.reporting_schedule}"
+}
+
+resource "aws_iam_role_policy_attachment" "billing-reports" {
+  role       = "${aws_iam_role.billing-reports.name}"
+  policy_arn = "${aws_iam_policy.billing-reports.arn}"
+}
+
+resource "aws_iam_role" "billing-reports" {
+  name = "billing-reports"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "billing-reports" {
+  name        = "billing-reports"
+  description = "Policy to allow getting and sending AWS billing reports by email"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Effect": "Allow",
+          "Action": "s3:GetObject",
+          "Resource": "arn:aws:s3:::${var.billing_bucket}/*"
+      },
+      {
+          "Effect": "Allow",
+          "Action": [
+              "ses:SendEmail",
+              "ses:SendRawEmail"
+          ],
+          "Resource": "*",
+          "Condition": {
+              "ForAllValues:StringLike": {
+                  "ses:Recipients": "*@li9.com"
+              }
+          }
+      }
+  ]
+}
+EOF
 }
