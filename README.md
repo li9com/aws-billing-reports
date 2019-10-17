@@ -18,3 +18,19 @@ In order to create report:
 1) Create Docker image from docker folder and upload it to registry (preferrably ECR).
 2) Examine variables.tf and create terraform.tfvars file with necessary variables.
 3) Run terraform.
+
+### Interpreting reports
+It might be sometimes tricky to interpret lines containing aws:createdBy like this: 
+```
+AssumedRole:AROAQGSSLZ6T6YAXNSK42:i-02499d1b0555498d9
+```
+
+This means that resource was created by IAM role, not by user. Here AROAQGSSLZ6T6YAXNSK42 is Role ID and 02499d1b0555498d9 is ID of EC2 instance that assumed that role. We can find information about role like this:
+```
+$ aws iam list-roles --output text | grep AROAQGSSLZ6T6YAXNSK42
+ROLES	arn:aws:iam::014131384231:role/ocp4-lgm58-master-role	2019-04-23T11:54:56Z		3600	/	AROAQGSSLZ6T6YAXNSK42	ocp4-lgm58-master-role
+```
+You can find information about EC2 instance like that:
+```
+$ aws ec2 describe-instances --filters Name=instance-id,Values=i-02499d1b0555498d9
+```
