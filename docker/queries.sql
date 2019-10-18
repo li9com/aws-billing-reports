@@ -9,7 +9,7 @@ SELECT  ROUND(SUM(`unblendedCost`), 2) AS 'Total unblended cost',
           AND `UsageEndDate`   <= @end
         GROUP BY `LinkedAccountId`;
 
-\! echo "Cost by service"
+SELECT  'Cost by service' AS '';
 SELECT  ROUND(SUM(`unblendedCost`), 2) cost,
         `usageType`,
         `availabilityZone` AS 'AZ',
@@ -20,7 +20,7 @@ SELECT  ROUND(SUM(`unblendedCost`), 2) cost,
         GROUP BY `usageType`,`availabilityZone`, `LinkedAccountId`
         HAVING SUM(`unblendedCost`) > 0.01;
 
-\! echo "Cost by owner"
+SELECT  'Cost by owner' AS '';
 SELECT  ROUND(SUM(`UnBlendedCost`), 2) AS cost,
         `aws:createdBy`,
         `user:Name` AS 'tag:Name',
@@ -31,7 +31,7 @@ SELECT  ROUND(SUM(`UnBlendedCost`), 2) AS cost,
         GROUP BY `aws:createdBy`, `user:Name`, `LinkedAccountId`
         HAVING SUM(`UnBlendedCost`) > 0.01;
 
-\! echo "Cost by date"
+SELECT  'Cost by date' AS '';
 SELECT  ROUND(SUM(`unblendedCost`), 2) cost,
         DATE(`UsageStartDate`),
         `LinkedAccountId` AS 'AccountID'
