@@ -1,4 +1,4 @@
-CREATE  TABLE IF NOT EXISTS `report` (
+CREATE  TABLE IF NOT EXISTS `aws-report` (
   `InvoiceID` VARCHAR(255),
   `PayerAccountId` VARCHAR(255),
   `LinkedAccountId` VARCHAR(255),

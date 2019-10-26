@@ -14,7 +14,7 @@ resource "aws_ecs_cluster" "angapov-test" {
 resource "aws_ecs_task_definition" "billing-reporter" {
   family                   = "billing-reporter"
   task_role_arn            = "${aws_iam_role.billing-reports.arn}"
-  execution_role_arn       = "arn:aws:iam::${var.account_id}:role/${var.ecs_execution_role}"
+  execution_role_arn       = "${aws_iam_role.billing-reports.arn}"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
@@ -41,12 +41,18 @@ resource "aws_ecs_task_definition" "billing-reporter" {
     "name": "billing-reporter",
     "image": "${var.ecs_docker_image}",
     "environment": [
-      { "name": "ACCOUNT_ID",           "value": "${var.account_id}" },
-      { "name": "BILLING_BUCKET",       "value": "${var.billing_bucket}" },
-      { "name": "REPORT_INTERVAL_DAYS", "value": "${var.report_interval_days}" },
-      { "name": "EMAIL_FROM",           "value": "${var.email.from}" },
-      { "name": "EMAIL_TO",             "value": "${var.email.to}" },
-      { "name": "EMAIL_SUBJECT",        "value": "${var.email.subject}" }
+      { "name": "AWS_ACCOUNT_ID",          "value": "${var.account_id}" },
+      { "name": "AWS_BILLING_BUCKET",      "value": "${var.billing_bucket}" },
+      { "name": "REPORT_INTERVAL_DAYS",    "value": "${var.report_interval_days}" },
+      { "name": "EMAIL_FROM",              "value": "${var.email.from}" },
+      { "name": "EMAIL_TO",                "value": "${var.email.to}" },
+      { "name": "AZURE_BILLING_CONTAINER", "value": "${var.azure_billing_container}" }
+    ],
+    "secrets": [
+      {
+        "name": "AZURE_STORAGE_CONNECTION_STRING",
+        "valueFrom": "${aws_secretsmanager_secret.billing-reports.arn}"
+      }
     ],
     "logConfiguration": {
       "logDriver": "awslogs",
@@ -81,6 +87,10 @@ resource "aws_cloudwatch_event_rule" "billing-reporter" {
   name                = "billing-report-ecs-cronjob"
   description         = "Send billing reports by email every week"
   schedule_expression = "${var.reporting_schedule}"
+}
+
+resource "aws_secretsmanager_secret" "billing-reports" {
+  name = "billing-reports"
 }
 
 resource "aws_iam_role_policy_attachment" "billing-reports" {
@@ -133,6 +143,28 @@ resource "aws_iam_policy" "billing-reports" {
                   "ses:Recipients": "*@li9.com"
               }
           }
+      },
+      {
+          "Effect": "Allow",
+          "Action": [
+              "secretsmanager:GetSecretValue",
+              "kms:Decrypt"
+          ],
+          "Resource": [
+              "${aws_secretsmanager_secret.billing-reports.arn}"
+          ]
+      },
+      {
+          "Effect": "Allow",
+          "Action": [
+              "ecr:GetAuthorizationToken",
+              "ecr:BatchCheckLayerAvailability",
+              "ecr:GetDownloadUrlForLayer",
+              "ecr:BatchGetImage",
+              "logs:CreateLogStream",
+              "logs:PutLogEvents"
+          ],
+          "Resource": "*"
       }
   ]
 }
