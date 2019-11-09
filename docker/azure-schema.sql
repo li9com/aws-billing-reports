@@ -21,5 +21,6 @@ CREATE  TABLE IF NOT EXISTS `azure-report` (
   `ServiceInfo2` VARCHAR(255),
   `ServiceName` VARCHAR(255),
   `ServiceTier` VARCHAR(255),
-  `Currency` VARCHAR(10)
+  `Currency` VARCHAR(10),
+  `UnitOfMeasure` VARCHAR(255)
 );

@@ -28,7 +28,13 @@ FILE=$(az storage blob list -c "${AZURE_BILLING_CONTAINER}" -o tsv --query "sort
 az storage blob download -c "${AZURE_BILLING_CONTAINER}" --name "${FILE}" -f azure-report.csv
 
 # Load AWS and Azure report SQL schema into MySQL
-mysql $MYSQL_CONN test < aws-schema.sql
+if head -1 aws-report.csv | grep -q "aws:cloudformation:stack-name"; then
+  # if AWS report contains column "aws:cloudformation:stack-name"
+  mysql $MYSQL_CONN test < aws-schema.sql
+else
+  # if not contains column "aws:cloudformation:stack-name"
+  mysql $MYSQL_CONN test < aws-schema-1.sql
+fi
 mysql $MYSQL_CONN test < azure-schema.sql
 
 # Load billing report into MySQL
