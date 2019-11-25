@@ -21,7 +21,7 @@ done
 
 # Downloading AWS billing report
 aws s3 cp s3://${AWS_BILLING_BUCKET}/${REPORT_ZIP} .
-unzip -p $REPORT_ZIP | head -n -9 > aws-report.csv
+unzip -p $REPORT_ZIP | head -n -12 > aws-report.csv
 
 # Downloading Azure billing report
 FILE=$(az storage blob list -c "${AZURE_BILLING_CONTAINER}" -o tsv --query "sort_by([].{Name:name, last:properties.lastModified} &last)" | tail -1 | awk '{print $1}')
